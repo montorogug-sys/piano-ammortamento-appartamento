@@ -8,6 +8,7 @@ from reportlab.lib.units import cm
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_CENTER, TA_RIGHT
+from reportlab.pdfgen import canvas
 import pandas as pd
 import smtplib
 from email.mime.multipart import MIMEMultipart
@@ -382,12 +383,73 @@ def crea_grafico_torta_composizione(piano_df):
     return temp_filename
 
 
+class NumberedCanvas(canvas.Canvas):
+    """Canvas personalizzato per numerazione pagine con totale"""
+    def __init__(self, *args, **kwargs):
+        canvas.Canvas.__init__(self, *args, **kwargs)
+        self._saved_page_states = []
+
+    def showPage(self):
+        self._saved_page_states.append(dict(self.__dict__))
+        self._startPage()
+
+    def save(self):
+        """Salva il PDF ridisegnando tutte le pagine con il numero totale"""
+        num_pages = len(self._saved_page_states)
+        for state in self._saved_page_states:
+            self.__dict__.update(state)
+            self.draw_page_number(num_pages)
+            canvas.Canvas.showPage(self)
+        canvas.Canvas.save(self)
+
+    def draw_page_number(self, page_count):
+        """Disegna il numero di pagina nel footer"""
+        self.setFont("Helvetica", 8)
+        page_num = self._pageNumber
+        self.drawCentredString(A4[0] / 2, 1.5*cm, f"Pagina {page_num} di {page_count}")
+
+
 def genera_pdf_report_completo(data):
-    """Genera PDF report completo con piano ammortamento e storico pagamenti"""
+    """Genera PDF report completo con piano ammortamento e storico pagamenti - Documento ufficiale allegato contratto"""
     from datetime import datetime
 
     filename = f"reports/report_ammortamento_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-    doc = SimpleDocTemplate(filename, pagesize=A4, topMargin=2*cm, bottomMargin=2*cm)
+
+    # Funzione per header su ogni pagina (footer con numerazione gestito da NumberedCanvas)
+    def header_footer(canvas_obj, doc_obj):
+        canvas_obj.saveState()
+        width, height = A4
+
+        # INTESTAZIONE
+        canvas_obj.setFont('Helvetica-Bold', 10)
+        canvas_obj.drawString(2*cm, height - 1.5*cm, "PIANO DI AMMORTAMENTO - ALLEGATO AL CONTRATTO DI COMPRAVENDITA")
+
+        canvas_obj.setFont('Helvetica', 8)
+        canvas_obj.drawString(2*cm, height - 2*cm, f"Creditore: MONTORO GUGLIELMO")
+        canvas_obj.drawString(10*cm, height - 2*cm, f"Debitore: PASQUARIELLO MATTIA")
+
+        canvas_obj.setFont('Helvetica', 7)
+        canvas_obj.drawString(2*cm, height - 2.4*cm, f"Data generazione: {datetime.now().strftime('%d/%m/%Y ore %H:%M')}")
+
+        # Linea separatore header
+        canvas_obj.setStrokeColorRGB(0.5, 0.5, 0.5)
+        canvas_obj.setLineWidth(0.5)
+        canvas_obj.line(2*cm, height - 2.6*cm, width - 2*cm, height - 2.6*cm)
+
+        # Nota: numerazione pagine gestita da NumberedCanvas.draw_page_number()
+
+        canvas_obj.restoreState()
+
+    # Usa margins maggiori per header/footer
+    doc = SimpleDocTemplate(
+        filename,
+        pagesize=A4,
+        topMargin=3.2*cm,  # Spazio per header
+        bottomMargin=2.5*cm,  # Spazio per footer
+        leftMargin=2*cm,
+        rightMargin=2*cm
+    )
+
     elements = []
     styles = getSampleStyleSheet()
 
@@ -657,8 +719,8 @@ def genera_pdf_report_completo(data):
     except Exception as e:
         elements.append(Paragraph(f"<i>Errore nella generazione dei grafici: {str(e)}</i>", styles['Italic']))
 
-    # Genera PDF
-    doc.build(elements)
+    # Genera PDF con header e footer su tutte le pagine
+    doc.build(elements, onFirstPage=header_footer, onLaterPages=header_footer, canvasmaker=NumberedCanvas)
 
     # Rimuovi file temporanei DOPO la generazione del PDF
     try:
