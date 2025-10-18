@@ -1,0 +1,39 @@
+# Dati sensibili
+data/ammortamento_data.json
+
+# File temporanei grafici
+temp_grafico_*.png
+
+# PDF generati
+cedolini/*.pdf
+reports/*.pdf
+*.pdf
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual environment
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Streamlit
+.streamlit/secrets.toml
