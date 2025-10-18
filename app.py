@@ -2060,6 +2060,85 @@ def main():
 
             st.divider()
 
+            # SEZIONE DOWNLOAD
+            st.subheader("📥 Download Documenti")
+
+            col_download1, col_download2 = st.columns(2)
+
+            # Finestra 1: Download cedole una alla volta (ordinate)
+            with col_download1:
+                st.markdown("### 📄 Cedole Pagamenti")
+                st.write("Scarica le cedole dei pagamenti confermati una alla volta")
+
+                from pathlib import Path
+
+                # Cerca tutti i file cedolino nella cartella cedolini/
+                cedolini_dir = Path("cedolini")
+                if cedolini_dir.exists():
+                    # Trova tutti i cedolini
+                    cedolini_files = sorted(
+                        list(cedolini_dir.glob("cedolino_*.pdf")) + list(cedolini_dir.glob("ricevuta_*.pdf")),
+                        key=lambda x: x.stat().st_mtime,
+                        reverse=True
+                    )
+
+                    if cedolini_files:
+                        st.info(f"📋 {len(cedolini_files)} cedole disponibili (ordinate per data, più recenti prima)")
+
+                        # Mostra ogni cedola con pulsante download
+                        for cedolino_path in cedolini_files:
+                            col_a, col_b = st.columns([3, 1])
+
+                            with col_a:
+                                st.text(f"📄 {cedolino_path.name}")
+
+                            with col_b:
+                                # Leggi il file
+                                with open(cedolino_path, 'rb') as pdf_file:
+                                    pdf_data = pdf_file.read()
+
+                                # Pulsante download per questa cedola
+                                st.download_button(
+                                    label="⬇️",
+                                    data=pdf_data,
+                                    file_name=cedolino_path.name,
+                                    mime="application/pdf",
+                                    key=f"download_{cedolino_path.name}",
+                                    use_container_width=True
+                                )
+                    else:
+                        st.warning("⚠️ Nessuna cedola trovata")
+                else:
+                    st.warning("⚠️ Cartella cedolini/ non trovata")
+
+            # Finestra 2: Download prospetto piano ammortamento
+            with col_download2:
+                st.markdown("### 📊 Piano Ammortamento")
+                st.write("Scarica il prospetto completo del piano di ammortamento aggiornato")
+
+                if st.button("📄 Genera e Scarica Prospetto", type="primary", use_container_width=True):
+                    try:
+                        # Genera il PDF
+                        pdf_filename = genera_pdf_report_completo(data)
+
+                        # Leggi il file PDF
+                        with open(pdf_filename, 'rb') as pdf_file:
+                            pdf_data = pdf_file.read()
+
+                        # Pulsante download
+                        st.download_button(
+                            label="⬇️ Download Prospetto PDF",
+                            data=pdf_data,
+                            file_name=f"piano_ammortamento_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
+                            mime="application/pdf",
+                            use_container_width=True
+                        )
+                        st.success("✅ Prospetto generato e pronto per il download!")
+                    except Exception as e:
+                        st.error(f"❌ Errore durante la generazione: {str(e)}")
+
+            st.divider()
+
             rate_confermate = [p for p in data["pagamenti"] if p.get("confermato", False)]
 
             # Sezione Generazione Cedolini Individuali
