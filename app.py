@@ -426,7 +426,7 @@ def genera_pdf_report_completo(data):
 
         canvas_obj.setFont('Helvetica', 8)
         canvas_obj.drawString(2*cm, height - 2*cm, f"Creditore: MONTORO GUGLIELMO")
-        canvas_obj.drawString(10*cm, height - 2*cm, f"Debitore: PASQUARIELLO MATTIA")
+        canvas_obj.drawString(10*cm, height - 2*cm, f"Debitore: MONTORO MATTIA")
 
         canvas_obj.setFont('Helvetica', 7)
         canvas_obj.drawString(2*cm, height - 2.4*cm, f"Data generazione: {datetime.now().strftime('%d/%m/%Y ore %H:%M')}")
