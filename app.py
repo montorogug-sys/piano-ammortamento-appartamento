@@ -2049,17 +2049,6 @@ def main():
         with tab5:
             st.header("Storico Pagamenti")
 
-            # Pulsante per generare PDF report completo
-            if st.button("📄 Genera Report PDF Completo", type="primary", use_container_width=True):
-                try:
-                    pdf_filename = genera_pdf_report_completo(data)
-                    st.success(f"✅ Report PDF generato con successo: **{pdf_filename}**")
-                    st.info("Il file è stato salvato nella cartella 'reports' dell'applicazione. Puoi scaricarlo e conservarlo.")
-                except Exception as e:
-                    st.error(f"❌ Errore durante la generazione del PDF: {str(e)}")
-
-            st.divider()
-
             # SEZIONE DOWNLOAD
             st.subheader("📥 Download Documenti")
 
